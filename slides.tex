@@ -30,7 +30,7 @@
 
 \begin{frame}{This talk}
 \begin{itemize}
-	\item Primarily: Implementing the bootstrap particle filter in Python
+	\item Primarily: Understanding the bootstrap particle filter by implementing it in Python
 	\item Secondarily: Why SMC is more useful than just state-space models
 \end{itemize}
 \end{frame}
@@ -46,18 +46,24 @@
 \end{frame}
 
 \begin{frame}{Example application: A bitcoin trading model}
-
 \begin{itemize}
 	\item We believe some traders are using `wash trading' to cause the bitcoin price to artificially rise.
-	\item We want to identify when this is occurring so we can make a profit.
+	\item The market is either in `wash trade' state, or `normal' state.
+	\item We want to identify when the market is in `wash trade' state so we can make a profit.
 	\item Let's model the change in BTC value from time $t - 1$ to $t$ as a real-valued number, $y_t$.
-	\item When the market is in `wash trade' state, the average change will be around some value $\mu$.
+	\item When the market is in `wash trade' state, the average change will be around some value $\mu > 0$.
 	\item In `normal' market conditions, $y_t$ will remain around $0$.
 \end{itemize}
-
 \end{frame}
 
-\begin{frame}{Distribution of price changes in `wash` and `non-wash` phases.}
+\begin{frame}{Example application: A bitcoin trading model}
+\begin{figure}[htb]
+\includegraphics[width=\textwidth]{wash-trading.png}
+\end{figure}
+\tiny{Lighter regions might represent `wash trading' states}
+\end{frame}
+
+\begin{frame}{Distribution of price changes in `wash` and `non-wash` states.}
 
 \begin{tikzpicture}
 \def\n{2}
@@ -140,7 +146,7 @@ p(x_i | x_{i - 1}) =
      \end{cases}
 \]
 
-Finally, $ X_0 \sim Bernoulli(\frac{1}{2}) $
+Finally, assume $ X_0 \sim Bernoulli(\frac{1}{2}) $
 
 \end{frame}
 
@@ -178,30 +184,54 @@ Finally, $ X_0 \sim Bernoulli(\frac{1}{2}) $
 
 
 
-\begin{frame}{The bootstrap particle filter}
+\begin{frame}{The Bootstrap Particle Filter: Intuition}
 Intuition
 \end{frame}
 
-\begin{frame}{The Bootstrap Particle Filter}
+\begin{frame}{The Bootstrap Particle Filter: Pseudocode}
 \fbox{\parbox{\textwidth}{The Bootstrap Filter
 	\begin{enumerate}
-		\item Initialization, $t = 0$.
+		\item \underline{\textit{Initialization}},
+			  $t = 0$.
 		\begin{itemize}
-			\item For $i = 1, .., N$, sample $x^{(i)}_0 \sim p(x_0)$ and set $t = 1$.
+			\item For $i = 1, ..., N$, sample $\mathbf{x}^{(i)}_0 \sim p(\mathbf{x}_0)$ and set $t = 1$.
 		\end{itemize}
 	
-		\item Importance sampling step, $t = 0$.
-%		\begin{itemize}
-%			\item For $i = 1, .., N$, sample $\tilde{x}^{(i)}_0 \sim p(x_t | x_{t - 1}^{(i)})$ and set $\tilde{x}_{0:t}^{(i)}
-%		\end{itemize}
-
+		\item \underline{\textit{Importance sampling step}}
+		\begin{itemize}
+			\item For $i = 1, ..., N$, sample
+			$\tilde{\mathbf{x}}^{(i)}_t \sim p(\mathbf{x}_t | \mathbf{x}_{t-1}^{(i)})$ 
+    	    and set $\tilde{\mathbf{x}}^{(i)}_{0:t} = 
+    	    (\mathbf{x}_{0:t - 1}^{(i)}, \tilde{\mathbf{x}}_t^{(i)})$
+    	    
+    	    \item For $i = 1,..,N$, evaluate the importance weights
+         	$$ \tilde{w}^{(i)}_t = p(\mathbf{y}_t | \tilde{\mathbf{x}}_t^{(i)}) $$
+         	
+         	\item Normalise the importance weights
+         	
+		\end{itemize}
+		
+		\item \underline{\textit{Selection Step}}
+		\begin{itemize}
+			\item Resample with replacement $N$ particles
+			$\big(\mathbf{x}_{0:t}^{(i)}; i = 1,...,N\big)$
+			from the set
+			$\big(\tilde{\mathbf{x}}_{0:t}^{(i)}; i = 1,...,N\big)$
+			according to the importance weights.
+			
+			\item Set $t \gets t + 1$ and go to step 2.
+		\end{itemize}
+		
 	\end{enumerate}
 }}
 
+\tiny{
 An introduction to Sequential Monte Carlo Methods, (Doucet, de Freitas, Gordon, p 11)
+}
+
 \end{frame}
 
-\begin{frame}[fragile]{Bootstrap PF: Python implementation}
+\begin{frame}[fragile]{The Bootstrap Particle Filter: Python implementation}
   \begin{figure}
   \centering
       \tiny
