@@ -32,6 +32,7 @@
 \begin{itemize}
 	\item Primarily: Understanding the bootstrap particle filter by implementing it in Python
 	\item Secondarily: Why SMC is more useful than just state-space models
+	\item Thirdarily: Why the bootstrap particle filter is particularly useful
 \end{itemize}
 \end{frame}
 
@@ -183,9 +184,25 @@ Finally, assume $ X_0 \sim Bernoulli(\frac{1}{2}) $
 \end{frame}
 
 
-
 \begin{frame}{The Bootstrap Particle Filter: Intuition}
-Intuition
+\resizebox{5.0cm}{!}{%
+\begin{tikzpicture}
+  \def\N{2}
+  \def\T{4}
+
+  \node[box,draw=white!100] (x^{-1}_{0}) {};
+
+  \foreach \n [evaluate = \n as \m using (int(\n - 1))] in {0,...,\N} {
+    \node[main] (x^{\n}_{0}) [right=of x^{\m}_{0}] {$x^{(\n)}_0$};
+    
+    \foreach \t [evaluate = \t as \u using (int(\t - 1))] in {1,...,\T} {
+      \node[main] (x^{\n}_{\t}) [below=of x^{\n}_{\u}] {$x^{(\n)}_{\t}$};
+      % \path (x_t) edge [connect] (y_t);
+      \path (x^{\n}_{\u}) edge [connect] (x^{\n}_{\t});
+	}
+  }
+\end{tikzpicture}%
+}%
 \end{frame}
 
 \begin{frame}{The Bootstrap Particle Filter: Pseudocode}
